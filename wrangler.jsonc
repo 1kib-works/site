@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "site",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-19",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kessai",
+      "database_id": "85ae6541-f74c-42cb-9064-e513db44d080"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
