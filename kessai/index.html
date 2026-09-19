@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>決裁｜8件通せば終わり</title>
+<meta name="description" content="回ってきた書類の不備を見抜いて、8件連続で正しく決裁してください。1件でも間違えると0に戻ります。">
+<style>
+:root{
+  --bg:#E9E7E0; --paper:#FCFCFA; --rule:#C7C3B8; --rule-2:#9A9689;
+  --ink:#22251F; --dim:#6E7267; --shu:#C13A26; --ao:#2F4A7A; --ok:#2F7D5B;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--gothic);font-size:16px;line-height:1.7;
+  font-feature-settings:"palt" 1;-webkit-user-select:none;user-select:none;min-height:100vh;
+}
+.wrap{max-width:440px;margin:0 auto;padding:0 16px 40px}
+
+header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:14px 0 10px;border-bottom:1px solid var(--rule)}
+header .t{font-family:var(--mincho);font-size:16px;letter-spacing:.32em;padding-right:.32em}
+header .time{font-variant-numeric:tabular-nums;font-family:var(--mincho);font-size:20px}
+
+.pips{display:flex;gap:5px;padding:12px 0 4px}
+.pip{flex:1;height:5px;background:var(--rule)}
+.pip.on{background:var(--ink)}
+.pipline{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+.rules{margin-top:14px;border:1px solid var(--rule-2);padding:12px 14px;font-size:12.5px;line-height:1.75;color:var(--dim)}
+.rules b{display:block;color:var(--ink);font-family:var(--mincho);font-size:13.5px;font-weight:400;letter-spacing:.06em;margin-bottom:5px}
+.rules ul{margin:0;padding-left:1.15em}
+.rules li{margin:1px 0}
+.rules strong{color:var(--ink);font-weight:600}
+
+.doc{
+  position:relative;background:var(--paper);border:1px solid var(--rule);
+  padding:20px 18px 22px;margin-top:16px;
+  box-shadow:0 5px 0 -2px var(--paper), 0 6px 0 -2px var(--rule);
+  transition:transform .13s ease, opacity .13s ease;
+}
+.doc.out{opacity:0;transform:translateY(7px)}
+.doc.bad{opacity:0;transform:translateX(-14px) rotate(1.6deg)}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.no{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.kind{font-size:10.5px;color:var(--paper);background:var(--rule-2);padding:2px 8px;letter-spacing:.08em;white-space:nowrap}
+.ttl{font-family:var(--mincho);font-size:clamp(17px,4.8vw,20px);line-height:1.5;margin:9px 0 14px;min-height:2.4em}
+
+.kv{display:grid;grid-template-columns:5.6em 1fr;gap:2px 8px;font-size:13px;border-top:1px solid var(--rule);padding-top:11px;margin:0}
+.kv dt{color:var(--dim)}
+.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.kv dd.empty::after{content:"（　　　）";color:var(--dim)}
+.kv.body{border-top:2px solid var(--rule-2);margin-top:13px;padding-top:12px;font-size:13.5px}
+.kv.body dt{color:var(--dim)}
+
+table{width:100%;border-collapse:collapse;margin-top:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 2px;border-bottom:1px solid var(--rule);text-align:left;font-weight:400;font-size:12.5px}
+thead th{font-size:10.5px;color:var(--dim);border-bottom:1px solid var(--rule-2)}
+td.n{text-align:right;white-space:nowrap;font-family:var(--mincho);font-size:14px}
+tr.sum th,tr.sum td{border-bottom:none;border-top:2px solid var(--rule-2);padding-top:9px;font-size:13.5px}
+tr.sum td.n{font-size:16px}
+
+.mark{
+  position:absolute;right:16px;bottom:16px;width:64px;height:64px;
+  border:3px solid var(--shu);border-radius:50%;color:var(--shu);
+  font-family:var(--mincho);font-size:14px;display:flex;align-items:center;justify-content:center;
+  text-align:center;line-height:1.15;transform:rotate(-12deg) scale(.4);opacity:0;
+  pointer-events:none;letter-spacing:.04em;
+}
+.mark.on{animation:press .34s ease-out forwards}
+.mark.ao{border-color:var(--ao);color:var(--ao)}
+@keyframes press{
+  0%{transform:rotate(-12deg) scale(.35);opacity:0}
+  40%{transform:rotate(-12deg) scale(1.15);opacity:.95}
+  100%{transform:rotate(-12deg) scale(1);opacity:.9}
+}
+
+.btns{display:flex;gap:10px;margin-top:16px}
+.btns button{
+  flex:1;font-family:var(--mincho);font-size:19px;letter-spacing:.2em;
+  padding:16px 4px 16px calc(4px + .2em);border:2px solid var(--ink);
+  background:transparent;color:var(--ink);cursor:pointer;border-radius:0;
+}
+#btnYes{border-color:var(--shu);color:var(--shu)}
+#btnYes:hover{background:var(--shu);color:var(--paper)}
+#btnNo{border-color:var(--ao);color:var(--ao)}
+#btnNo:hover{background:var(--ao);color:var(--paper)}
+.btns button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.btns button:disabled{opacity:.35;cursor:default}
+
+.msg{margin-top:14px;min-height:3.4em;font-size:13.5px;line-height:1.75}
+.msg.err{color:var(--shu)}
+.msg.ok{color:var(--ok)}
+
+.clear{display:none;margin-top:16px;border:2px solid var(--ink);padding:30px 18px 26px;text-align:center;background:var(--paper)}
+.clear .l{font-size:13px;color:var(--dim)}
+.clear .v{font-family:var(--mincho);font-variant-numeric:tabular-nums;font-size:clamp(38px,11vw,54px);line-height:1.1;margin:6px 0}
+.clear .s{font-size:13px;color:var(--dim)}
+.sub{margin-top:14px;background:transparent;border:1px solid var(--rule-2);color:var(--dim);font-family:var(--gothic);font-size:13px;padding:9px 18px;cursor:pointer}
+.sub:hover{border-color:var(--ink);color:var(--ink)}
+.after{margin:16px 0 0;padding-top:14px;border-top:1px solid var(--rule);font-size:13px;line-height:2}
+.after a{color:var(--dim);text-underline-offset:3px;display:inline-block}
+.after a:hover{color:var(--ink)}
+
+.ledger{
+  margin:22px 0 0;padding-top:9px;border-top:1px solid var(--rule);
+  font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;
+  display:flex;justify-content:space-between;letter-spacing:.02em;
+}
+.ledger.hot{color:var(--shu)}
+footer{margin-top:20px;padding-top:14px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--dim);line-height:1.85}
+
+@media (prefers-reduced-motion:reduce){
+  .doc{transition:none}
+  .mark.on{animation:none;opacity:.9;transform:rotate(-12deg) scale(1)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a href="/" style="font-family:var(--mincho);font-size:16px;letter-spacing:.32em;padding-right:.32em;color:var(--ink);text-decoration:none">決裁</a>
+    <span class="time" id="time">0.00</span>
+  </header>
+
+  <div class="pips" id="pips"></div>
+  <div class="pipline"><span id="prog">0 / 8</span><span id="fail">やり直し 0 回</span></div>
+  <div class="pipline" style="margin-top:2px"><span id="seen">処理 0 件</span><span id="best"></span></div>
+
+  <div class="rules">
+    <b>否認の基準</b>
+    <ul>
+      <li>日付や時刻に矛盾がある</li>
+      <li>起案者と承認者が同一人物（名字も役職も同じ）</li>
+      <li>必須項目が空欄</li>
+      <li>計算が合わない</li>
+      <li><strong>内容が常識的におかしい</strong></li>
+    </ul>
+    <p style="margin:7px 0 0">最後の1行は、自分で気づいてください。どれにも当たらなければ承認。1件でも間違えると0件に戻ります。</p>
+  </div>
+
+  <div class="doc" id="doc">
+    <div class="head">
+      <span class="no" id="no"></span>
+      <span class="kind" id="kind"></span>
+    </div>
+    <div class="ttl" id="ttl"></div>
+    <dl class="kv">
+      <dt>起案部署</dt><dd id="dept"></dd>
+      <dt>起案者</dt><dd id="from"></dd>
+      <dt>承認者</dt><dd id="to"></dd>
+      <dt>起案日</dt><dd id="d1"></dd>
+      <dt>決裁期限</dt><dd id="d2"></dd>
+    </dl>
+    <div id="body"></div>
+    <div class="mark" id="mark">承<br>認</div>
+  </div>
+
+  <div class="clear" id="clear">
+    <div class="l">全8件 完了</div>
+    <div class="v" id="ctime">0.00</div>
+    <div class="s" id="csub"></div>
+    <button class="sub" id="again">もう一度</button>
+    <p class="after">
+      <a href="/">ほかの道具を見る</a>
+    </p>
+  </div>
+
+  <div class="btns" id="btns">
+    <button id="btnYes">承認</button>
+    <button id="btnNo">否認</button>
+  </div>
+
+  <p class="msg" id="msg">1件目です。</p>
+
+  <p class="ledger" id="ledger">累計損害額　—</p>
+
+  <footer>
+    <p>タイムは最初の判定から計測します。間違えても計測は止まりません。最速タイムはこのページを開いている間だけ記録されます。</p>
+    <p>登場する社名・部署名・人名・規程はすべて架空のものです。実在する企業や団体とは関係ありません。</p>
+    <p>1KB</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var $ = function(i){ return document.getElementById(i); };
+
+  var DEPT = ["総務部","経理部","人事部","情報システム部","事業推進部","品質管理部","購買部","広報室"];
+  var NAME = ["田中","佐藤","鈴木","高橋","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田","松本","井上","木村"];
+  var POST = ["主任","係長","課長","部長"];
+
+  /* ── 購入稟議 ── */
+  var KIND = ["購入稟議","購入伺い","調達稟議"];
+  var ITEM = [
+    { n:"A4コピー用紙",       lo:400,  hi:700,   u:"冊" },
+    { n:"トナーカートリッジ", lo:7000, hi:11000, u:"本" },
+    { n:"事務用椅子",         lo:14000,hi:22000, u:"脚" },
+    { n:"ホワイトボード",     lo:11000,hi:17000, u:"台" },
+    { n:"延長コード",         lo:900,  hi:1600,  u:"本" },
+    { n:"乾電池（単3）",      lo:500,  hi:900,   u:"箱" },
+    { n:"名札ケース",         lo:200,  hi:400,   u:"個" },
+    { n:"マウス",             lo:2000, hi:3800,  u:"個" },
+    { n:"キーボード",         lo:4000, hi:7000,  u:"個" },
+    { n:"収納棚",             lo:16000,hi:26000, u:"台" },
+    { n:"デスクマット",       lo:1500, hi:2600,  u:"枚" },
+    { n:"付箋",               lo:250,  hi:500,   u:"束" }
+  ];
+
+  /* ── 利用申請 ── */
+  var ROOM = [
+    { n:"第1会議室", cap:12 }, { n:"第2会議室", cap:8 },
+    { n:"大会議室",  cap:40 }, { n:"研修室",   cap:24 },
+    { n:"応接室",    cap:6  }, { n:"多目的ホール", cap:120 }
+  ];
+  var PURPOSE = [
+    { n:"採用面接",         min:2,  max:6  },
+    { n:"取引先との打合せ", min:2,  max:8  },
+    { n:"部内定例会議",     min:4,  max:20 },
+    { n:"改善検討会",       min:4,  max:16 },
+    { n:"安全衛生委員会",   min:6,  max:20 },
+    { n:"社内研修",         min:10, max:40 },
+    { n:"製品説明会",       min:15, max:60 },
+    { n:"四半期報告会",     min:25, max:120 }
+  ];
+
+  /* ── 規程の改訂 ── */
+  var RULE = [
+    { r:"出張旅費規程",         i:"日当の額",              b:2000, a:2500,  u:"円",   own:"経理部" },
+    { r:"経費精算規程",         i:"申請期限",              b:30,   a:45,    u:"日",   own:"経理部" },
+    { r:"文書管理規程",         i:"保存年限",              b:5,    a:7,     u:"年",   own:"総務部" },
+    { r:"文書管理規程",         i:"廃棄申請の決裁区分",    b:2,    a:3,     u:"段階", own:"総務部" },
+    { r:"車両管理規程",         i:"社用車の1日の走行上限", b:200,  a:300,   u:"km",   own:"総務部" },
+    { r:"就業規則",             i:"有給休暇の申請期限",    b:3,    a:5,     u:"日前", own:"人事部" },
+    { r:"慶弔見舞金規程",       i:"結婚祝金の額",          b:10000,a:15000, u:"円",   own:"人事部" },
+    { r:"情報セキュリティ規程", i:"パスワードの有効期間",  b:90,   a:120,   u:"日",   own:"情報システム部" },
+    { r:"情報セキュリティ規程", i:"外部媒体の持出申請区分",b:1,    a:2,     u:"段階", own:"情報システム部" },
+    { r:"品質管理規程",         i:"検査記録の保存年限",    b:3,    a:5,     u:"年",   own:"品質管理部" },
+    { r:"購買管理規程",         i:"相見積の必要件数",      b:2,    a:3,     u:"社",   own:"購買部" },
+    { r:"広報規程",             i:"対外発表の事前確認期限",b:3,    a:5,     u:"営業日",own:"広報室" }
+  ];
+
+  /* ── 出張申請 ── */
+  var CITY = [
+    { n:"東京",   far:true,  lo:22000, hi:34000, air:true  },
+    { n:"大阪",   far:true,  lo:14000, hi:24000, air:false },
+    { n:"名古屋", far:true,  lo:12000, hi:20000, air:false },
+    { n:"仙台",   far:true,  lo:24000, hi:36000, air:true  },
+    { n:"福岡",   far:true,  lo:30000, hi:52000, air:true  },
+    { n:"札幌",   far:true,  lo:38000, hi:64000, air:true  },
+    { n:"隣接市", far:false, lo:600,   hi:2400,  air:false },
+    { n:"市内",   far:false, lo:400,   hi:1200,  air:false }
+  ];
+  var TRIP = ["取引先訪問","現地調査","展示会出展","監査対応","納品立会","技術打合せ"];
+  var TRANS = ["新幹線","航空機","在来線","社用車"];
+
+
+  /* ── 押印依頼 ── */
+  /* 架空の社名。実在の企業とは関係ありません */
+  var PARTY = [
+    "株式会社アルナ商会",
+    "ヌメロテック株式会社",
+    "有限会社ゼクト工業",
+    "カリム情報システム株式会社",
+    "株式会社ペトラ運輸",
+    "オルディア精機株式会社"
+  ];
+  var CONTRACT = ["業務委託契約","保守契約","賃貸借契約","売買基本契約","秘密保持契約"];
+  /* 決裁区分：金額に応じて必要な承認者の役職 */
+  function needPost(amount){
+    if(amount >= 5000000) return "部長";
+    if(amount >= 1000000) return "課長";
+    return "係長";
+  }
+  var RANK = { "主任":0, "係長":1, "課長":2, "部長":3 };
+
+  var GOAL = 8;
+  var ok = 0, started = false, t0 = 0, timer = null, busy = false, best = null, cur = null;
+  var fails = 0, seen = 0, bestFails = null, loss = 0;
+
+  function r(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function ri(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+  function yen(n){ return Number(n).toLocaleString("ja-JP"); }
+  function pad(v,l){ return String(v).padStart(l,"0"); }
+  function dt(m,d){ return { m:m, d:d, text:m + "月" + d + "日" }; }
+  function hm(h,mi){ return { h:h, mi:mi, text:h + ":" + pad(mi,2) }; }
+
+  function base(){
+    var d = {};
+    d.no = "第 " + pad(ri(1000,9999),5) + " 号";
+    d.dept = r(DEPT);
+    d.from = r(NAME) + " " + POST[ri(0,1)];
+    d.to   = r(NAME) + " " + POST[ri(2,3)];
+    var m = ri(1,11), day = ri(1,10);
+    d.d1 = dt(m, day);
+    d.d2 = dt(m, day + ri(6,12));
+    d.bad = false; d.reason = "";
+    return d;
+  }
+
+  /* ═══ 購入稟議 ═══ */
+  function makeBuy(){
+    var d = base();
+    d.type = "buy"; d.kind = "購入";
+    var n = ri(2,3), used = [];
+    d.items = [];
+    for(var i=0;i<n;i++){
+      var it; do { it = r(ITEM); } while(used.indexOf(it.n) !== -1);
+      used.push(it.n);
+      var q = ri(1,12), p = Math.round(ri(it.lo,it.hi)/100)*100;
+      d.items.push({ name:it.n, unit:it.u, qty:q, price:p, amt:q*p });
+    }
+    d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+    d.mainItem = d.items.slice().sort(function(a,b){ return b.amt-a.amt; })[0].name;
+    d.title = d.mainItem + "ほか" + r(KIND) + "の件";
+    return d;
+  }
+  var FLAW_BUY = [
+    function(d){
+      var real = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.total += (Math.random()<.5?-1:1) * ri(1,9) * (Math.random()<.5?100:1000);
+      d.loss = Math.abs(d.total - real);
+      d.reason = "合計が明細の和と合っていませんでした。";
+    },
+    function(d){
+      var it = d.items[ri(0,d.items.length-1)];
+      var before = it.amt;
+      it.amt += (Math.random()<.5?-1:1) * ri(1,9) * 100;
+      d.loss = Math.abs(it.amt - before);
+      d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.reason = "行の金額が「数量×単価」と一致していませんでした。";
+    },
+    function(d){
+      var it = d.items[ri(0,d.items.length-1)];
+      var p0 = it.price;
+      it.price = Math.round(ri(it.price*5, it.price*12)/100)*100;
+      it.amt = it.qty*it.price;
+      d.loss = (it.price - p0) * it.qty;
+      d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.reason = "「" + it.name + "」の単価が相場からかけ離れていました。";
+    },
+    function(d){
+      var it = d.items[ri(0,d.items.length-1)];
+      var q0 = it.qty;
+      it.qty = ri(120,400); it.amt = it.qty*it.price;
+      d.loss = (it.qty - q0) * it.price;
+      d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.reason = "「" + it.name + "」の数量が一部署の購入としてあり得ない量でした。";
+    },
+    function(d){
+      var it = d.items[0], q2 = ri(1,9), p2 = it.price + ri(1,4)*100;
+      d.items.splice(1,0,{ name:it.name, unit:it.unit, qty:q2, price:p2, amt:q2*p2 });
+      d.loss = q2 * p2;
+      d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.reason = "同じ品目が、単価を変えて2行に分けられていました。";
+    },
+    function(d){
+      var o; do { o = r(ITEM); } while(o.n === d.mainItem);
+      d.title = o.n + "ほか" + r(KIND) + "の件";
+      d.loss = ri(20,60) * 1000;
+      d.reason = "件名の品目（" + o.n + "）が、明細のどこにもありませんでした。";
+    },
+    function(d){
+      d.title = d.mainItem + "廃止に関する伺いの件";
+      d.loss = d.total;
+      d.reason = "廃止の伺いなのに、購入の明細が付いていました。";
+    },
+    function(d){
+      var it = d.items[ri(0,d.items.length-1)];
+      var p1 = it.price;
+      it.price = 0; it.amt = 0;
+      d.loss = p1 * it.qty;
+      d.total = d.items.reduce(function(a,b){ return a+b.amt; },0);
+      d.reason = "単価が0円の明細が含まれていました。";
+    }
+  ];
+
+  /* ═══ 利用申請 ═══ */
+  function makeUse(){
+    var d = base();
+    d.type = "use"; d.kind = "申請";
+    var pu = r(PURPOSE);
+    var fit = ROOM.filter(function(x){ return x.cap >= pu.min && x.cap <= pu.max * 1.5; });
+    if(!fit.length) fit = ROOM.filter(function(x){ return x.cap >= pu.min; });
+    d.room = r(fit);
+    d.purpose = pu.n;
+    d.pu = pu;
+    d.people = ri(pu.min, Math.min(pu.max, d.room.cap));
+    d.useDay = dt(d.d1.m, d.d2.d + ri(2,10));
+    var sh = ri(9,15);
+    d.st = hm(sh, r([0,30]));
+    var dur = ri(1,3);
+    d.et = hm(sh + dur, d.st.mi);
+    d.title = d.room.n + "利用申請の件";
+    return d;
+  }
+  var FLAW_USE = [
+    function(d){
+      d.et = hm(d.st.h - ri(1,3), d.st.mi);
+      d.loss = ri(8,24)*1000;
+      d.reason = "終了時刻が開始時刻より前になっていました。";
+    },
+    function(d){
+      d.et = hm(d.st.h, d.st.mi);
+      d.loss = ri(8,24)*1000;
+      d.reason = "開始時刻と終了時刻が同じでした。";
+    },
+    function(d){
+      d.people = d.room.cap + ri(4, 30);
+      if(d.people > 130) d.people = d.room.cap + ri(4, 20);
+      d.loss = (d.people - d.room.cap) * ri(2,6) * 1000;
+      d.reason = "「" + d.room.n + "」の定員（" + d.room.cap + "名）を超える人数でした。";
+    },
+    function(d){
+      d.useDay = dt(d.d1.m, Math.max(1, d.d1.d - ri(1,5)));
+      d.loss = ri(10,30)*1000;
+      d.reason = "使用日が起案日より前でした。すでに終わった日の申請です。";
+    },
+    function(d){
+      d.useDay = dt(d.d2.m, Math.max(1, d.d2.d - ri(1,4)));
+      d.loss = ri(10,30)*1000;
+      d.reason = "決裁期限より前に使用することになっていました。";
+    },
+    function(d){
+      var o; do { o = r(ROOM); } while(o.n === d.room.n);
+      d.title = o.n + "利用申請の件";
+      d.loss = ri(12,36)*1000;
+      d.reason = "件名の部屋（" + o.n + "）と、申請内容の部屋が違っていました。";
+    },
+    function(d){
+      d.people = 1;
+      d.loss = ri(5,15)*1000;
+      d.reason = "「" + d.purpose + "」の利用人数が1名でした。";
+    }
+  ];
+
+  /* ═══ 規程の改訂 ═══ */
+  function makeRule(){
+    var d = base();
+    d.type = "rule"; d.kind = "改訂";
+    var x = r(RULE);
+    d.rule = x.r; d.item = x.i; d.before = x.b; d.after = x.a; d.unit = x.u;
+    d.owner = x.own;
+    d.dept = x.own;
+    d.enforce = dt(d.d2.m === 12 ? 1 : d.d2.m + 1, ri(1,20));
+    d.title = d.rule + "の一部改訂の件";
+    return d;
+  }
+  var FLAW_RULE = [
+    function(d){
+      d.after = d.before;
+      d.loss = ri(60,180)*1000;
+      d.reason = "改訂前と改訂後が同じ値でした。改訂する内容がありません。";
+    },
+    function(d){
+      d.enforce = dt(d.d2.m, Math.max(1, d.d2.d - ri(1,5)));
+      d.loss = ri(80,240)*1000;
+      d.reason = "施行日が決裁期限より前でした。決まる前に施行されます。";
+    },
+    function(d){
+      var o; do { o = r(RULE); } while(o.r === d.rule);
+      d.title = o.r + "の一部改訂の件";
+      d.loss = ri(100,300)*1000;
+      d.reason = "件名の規程（" + o.r + "）と、改訂内容の規程が違っていました。";
+    },
+    function(d){
+      d.after = 0;
+      d.loss = ri(120,400)*1000;
+      d.reason = "「" + d.item + "」が0になっていました。";
+    },
+    function(d){
+      d.after = d.before * ri(20, 60);
+      d.loss = ri(150,600)*1000;
+      d.reason = "「" + d.item + "」の改訂後の値が現実的ではありませんでした。";
+    },
+    function(d){
+      var o; do { o = r(DEPT); } while(o === d.owner);
+      d.dept = o;
+      d.loss = ri(40,120)*1000;
+      d.reason = "「" + d.rule + "」の所管は" + d.owner + "です。所管外の部署が起案していました。";
+    }
+  ];
+
+  /* 全種共通の不備 */
+  var FLAW_ANY = [
+    function(d){
+      var b = r([[2,30],[2,31],[4,31],[6,31],[9,31],[11,31]]);
+      d.d1 = dt(b[0], b[1]);
+      d.d2 = dt(b[0] === 12 ? 1 : b[0]+1, ri(3,20));
+      d.loss = ri(4,12)*1000;
+      d.reason = "存在しない日付が起案日になっていました。";
+    },
+    function(d){
+      d.d2 = dt(d.d1.m, Math.max(1, d.d1.d - ri(1,5)));
+      d.loss = ri(4,12)*1000;
+      d.reason = "決裁期限が起案日より前になっていました。";
+    },
+    function(d){
+      d.to = d.from;
+      d.loss = ri(30,90)*1000;
+      d.reason = "起案者と承認者が同一人物（名字も役職も同じ）でした。";
+    },
+    function(d){
+      var keys = d.type === "rule" ? ["from","to"] : ["dept","from","to"];
+      d[r(keys)] = "";
+      d.loss = ri(3,10)*1000;
+      d.reason = "必須項目が空欄でした。";
+    }
+  ];
+
+  /* ═══ 出張申請 ═══ */
+  function makeTrip(){
+    var d = base();
+    d.type = "trip"; d.kind = "出張";
+    d.city = r(CITY);
+    d.purpose = r(TRIP);
+    d.days = d.city.far ? ri(1,4) : 1;
+    d.nights = d.city.far ? Math.max(0, d.days - 1) : 0;
+    d.trans = d.city.far ? (d.city.air ? r(["新幹線","航空機"]) : "新幹線") : r(["在来線","社用車"]);
+    d.startDay = dt(d.d1.m, d.d2.d + ri(2,8));
+    /* 日当は宿泊を伴う出張のみ。日帰り・近距離は支給しない */
+    d.allowanceUnit = d.nights ? 2000 : 0;
+    d.allowance = d.allowanceUnit * d.days;
+    d.hotelUnit = d.nights ? ri(70,95) * 100 : 0;
+    d.hotel = d.hotelUnit * d.nights;
+    d.fare = Math.round(ri(d.city.lo, d.city.hi) / 100) * 100;
+    d.total = d.allowance + d.hotel + d.fare;
+    d.title = d.city.n + "出張申請の件";
+    return d;
+  }
+  var FLAW_TRIP = [
+    function(d){
+      d.total += (Math.random()<.5?-1:1) * ri(1,9) * 1000;
+      d.loss = Math.abs(d.total - (d.allowance + d.hotel + d.fare));
+      d.reason = "旅費の合計が内訳と合っていませんでした。";
+    },
+    function(d){
+      d.allowance = d.allowanceUnit * (d.days + ri(1,3));
+      d.total = d.allowance + d.hotel + d.fare;
+      d.loss = d.allowance - d.allowanceUnit * d.days;
+      d.reason = "日当が出張日数分を超えて計上されていました。";
+    },
+    function(d){
+      d.nights = d.days + ri(1,2);
+      d.hotel = d.hotelUnit * d.nights;
+      d.total = d.allowance + d.hotel + d.fare;
+      d.loss = d.hotelUnit * (d.nights - Math.max(0, d.days - 1));
+      d.reason = "宿泊数が出張日数を超えていました。";
+    },
+    function(d){
+      d.city = r([CITY[6], CITY[7]]);
+      d.title = d.city.n + "出張申請の件";
+      d.days = 1; d.nights = 0; d.trans = r(["在来線","社用車"]);
+      d.fare = Math.round(ri(d.city.lo, d.city.hi) / 100) * 100;
+      d.hotelUnit = 8000; d.hotel = 8000 * ri(1,2);
+      d.allowanceUnit = 0; d.allowance = 0;
+      d.total = d.allowance + d.hotel + d.fare;
+      d.loss = d.hotel;
+      d.reason = "日帰りの近距離出張なのに宿泊費が計上されていました。";
+    },
+    function(d){
+      d.city = r([CITY[6], CITY[7]]);
+      d.title = d.city.n + "出張申請の件";
+      d.days = 1; d.nights = 0; d.trans = r(["在来線","社用車"]);
+      d.fare = Math.round(ri(d.city.lo, d.city.hi) / 100) * 100;
+      d.hotelUnit = 0; d.hotel = 0;
+      d.allowanceUnit = 2000; d.allowance = 2000;
+      d.total = d.allowance + d.hotel + d.fare;
+      d.loss = 2000;
+      d.reason = "日当は宿泊を伴う出張のみです。日帰りに日当が付いていました。";
+    },
+    function(d){
+      d.startDay = dt(d.d1.m, Math.max(1, d.d1.d - ri(1,4)));
+      d.loss = d.total;
+      d.reason = "出発日が起案日より前でした。すでに出張が終わっています。";
+    },
+    function(d){
+      d.startDay = dt(d.d2.m, Math.max(1, d.d2.d - ri(1,3)));
+      d.loss = ri(20,50)*1000;
+      d.reason = "決裁期限より前に出発することになっていました。";
+    },
+    function(d){
+      var o; do { o = r(CITY); } while(o.n === d.city.n);
+      d.title = o.n + "出張申請の件";
+      d.loss = ri(15,45)*1000;
+      d.reason = "件名の行き先（" + o.n + "）と、申請内容の行き先が違っていました。";
+    },
+    function(d){
+      d.trans = d.city.far ? "社用車" : "航空機";
+      d.loss = ri(10,40)*1000;
+      d.reason = "行き先に対して交通手段が不自然でした。";
+    }
+  ];
+
+
+  /* ═══ 押印依頼 ═══ */
+  function makeSeal(){
+    var d = base();
+    d.type = "seal"; d.kind = "押印";
+    d.party = r(PARTY);
+    d.contract = r(CONTRACT);
+    d.amount = ri(1, 90) * 100000;
+    d.need = needPost(d.amount);
+    /* 承認者の役職は決裁区分を満たすものにする */
+    var posts = POST.filter(function(x){ return RANK[x] >= RANK[d.need]; });
+    d.to = r(NAME) + " " + r(posts);
+    d.from = r(NAME) + " " + POST[ri(0,1)];
+    var sm = d.d2.m;
+    d.termFrom = dt(sm === 12 ? 1 : sm + 1, ri(1,15));
+    d.months = r([6,12,12,24,36]);
+    d.title = d.party + "との" + d.contract + "押印依頼の件";
+    return d;
+  }
+  var FLAW_SEAL = [
+    function(d){
+      var lower = POST.filter(function(x){ return RANK[x] < RANK[d.need]; });
+      if(!lower.length) lower = ["主任"];
+      d.to = r(NAME) + " " + r(lower);
+      d.loss = Math.round(d.amount * 0.05);
+      d.reason = "契約金額 " + yen(d.amount) + " 円は「" + d.need + "」以上の決裁が必要です。";
+    },
+    function(d){
+      d.termFrom = dt(d.d2.m, Math.max(1, d.d2.d - ri(1,4)));
+      d.loss = ri(50,200)*1000;
+      d.reason = "契約開始日が決裁期限より前でした。押印前に契約が始まります。";
+    },
+    function(d){
+      d.months = 0;
+      d.loss = ri(30,120)*1000;
+      d.reason = "契約期間が0か月でした。";
+    },
+    function(d){
+      var o; do { o = r(PARTY); } while(o === d.party);
+      d.title = o + "との" + d.contract + "押印依頼の件";
+      d.loss = ri(80,300)*1000;
+      d.reason = "件名の相手方（" + o + "）と、契約内容の相手方が違っていました。";
+    },
+    function(d){
+      d.contract = "秘密保持契約";
+      d.amount = ri(5,80) * 100000;
+      d.need = needPost(d.amount);
+      d.loss = ri(20,80)*1000;
+      d.reason = "秘密保持契約に契約金額が計上されていました。";
+    }
+  ];
+
+  var MAKERS = [makeBuy, makeUse, makeRule, makeTrip, makeSeal];
+  var OWN = { buy:FLAW_BUY, use:FLAW_USE, rule:FLAW_RULE, trip:FLAW_TRIP, seal:FLAW_SEAL };
+
+  function generate(){
+    var d = r(MAKERS)();
+    if(Math.random() < 0.5){
+      var pool = OWN[d.type].concat(FLAW_ANY);
+      r(pool)(d);
+      d.bad = true;
+    }
+    return d;
+  }
+
+  function bodyHTML(d){
+    if(d.type === "buy"){
+      var h = '<table><thead><tr><th>品目</th><th style="text-align:right">数量</th><th style="text-align:right">単価</th><th style="text-align:right">金額</th></tr></thead><tbody>';
+      d.items.forEach(function(it){
+        h += "<tr><th>" + it.name + "</th><td class=\"n\">" + yen(it.qty) + it.unit +
+             "</td><td class=\"n\">" + yen(it.price) + "</td><td class=\"n\">" + yen(it.amt) + "</td></tr>";
+      });
+      h += '<tr class="sum"><th colspan="3">合計</th><td class="n">' + yen(d.total) + "</td></tr></tbody></table>";
+      return h;
+    }
+    if(d.type === "use"){
+      return '<dl class="kv body">' +
+        "<dt>使用場所</dt><dd>" + d.room.n + "（定員 " + d.room.cap + "名）</dd>" +
+        "<dt>使用日</dt><dd>" + d.useDay.text + "</dd>" +
+        "<dt>時間</dt><dd>" + d.st.text + " 〜 " + d.et.text + "</dd>" +
+        "<dt>使用人数</dt><dd>" + d.people + " 名</dd>" +
+        "<dt>用途</dt><dd>" + d.purpose + "</dd></dl>";
+    }
+    if(d.type === "trip"){
+      return '<dl class="kv body">' +
+        "<dt>行き先</dt><dd>" + d.city.n + "</dd>" +
+        "<dt>出発日</dt><dd>" + d.startDay.text + "</dd>" +
+        "<dt>期間</dt><dd>" + d.days + "日間（" + d.nights + "泊）</dd>" +
+        "<dt>交通手段</dt><dd>" + d.trans + "</dd>" +
+        "<dt>用務</dt><dd>" + d.purpose + "</dd></dl>" +
+        '<table><tbody>' +
+        (d.allowance ? '<tr><th>日当（' + yen(d.allowanceUnit) + '円 × ' + d.days + '日）</th><td class="n">' + yen(d.allowance) + '</td></tr>' : '') +
+        (d.hotel ? '<tr><th>宿泊費' + (d.hotelUnit ? '（' + yen(d.hotelUnit) + '円 × ' + Math.round(d.hotel/d.hotelUnit) + '泊）' : '') + '</th><td class="n">' + yen(d.hotel) + '</td></tr>' : '') +
+        '<tr><th>交通費</th><td class="n">' + yen(d.fare) + '</td></tr>' +
+        '<tr class="sum"><th>合計</th><td class="n">' + yen(d.total) + '</td></tr></tbody></table>';
+    }
+    if(d.type === "seal"){
+      return '<dl class="kv body">' +
+        "<dt>相手方</dt><dd>" + d.party + "</dd>" +
+        "<dt>契約種別</dt><dd>" + d.contract + "</dd>" +
+        "<dt>契約金額</dt><dd>" + yen(d.amount) + " 円</dd>" +
+        "<dt>契約期間</dt><dd>" + d.termFrom.text + "から " + d.months + "か月</dd>" +
+        "<dt>決裁区分</dt><dd>" + d.need + "以上</dd></dl>";
+    }
+    return '<dl class="kv body">' +
+      "<dt>対象規程</dt><dd>" + d.rule + "</dd>" +
+      "<dt>改訂項目</dt><dd>" + d.item + "</dd>" +
+      "<dt>改訂前</dt><dd>" + yen(d.before) + d.unit + "</dd>" +
+      "<dt>改訂後</dt><dd>" + yen(d.after) + d.unit + "</dd>" +
+      "<dt>施行日</dt><dd>" + d.enforce.text + "</dd></dl>";
+  }
+
+  function render(){
+    cur = generate();
+    seen++; $("seen").textContent = "処理 " + seen + " 件";
+    $("no").textContent = cur.no;
+    $("kind").textContent = cur.kind;
+    $("ttl").textContent = cur.title;
+    $("dept").textContent = cur.dept; $("dept").className = cur.dept ? "" : "empty";
+    $("from").textContent = cur.from; $("from").className = cur.from ? "" : "empty";
+    $("to").textContent   = cur.to;   $("to").className   = cur.to   ? "" : "empty";
+    $("d1").textContent = cur.d1.text;
+    $("d2").textContent = cur.d2.text;
+    $("body").innerHTML = bodyHTML(cur);
+    $("doc").className = "doc";
+    $("mark").className = "mark";
+    $("btnYes").disabled = false;
+    $("btnNo").disabled = false;
+  }
+
+  function pips(){
+    var h = "";
+    for(var i=0;i<GOAL;i++) h += '<div class="pip' + (i<ok?" on":"") + '"></div>';
+    $("pips").innerHTML = h;
+    $("prog").textContent = ok + " / " + GOAL;
+  }
+  function fmt(ms){ return (ms/1000).toFixed(2); }
+  function tick(){ $("time").textContent = fmt(Date.now()-t0); }
+  function start(){ if(started) return; started = true; t0 = Date.now(); timer = setInterval(tick,50); }
+
+  function judge(approve){
+    if(busy) return;
+    busy = true; start();
+    $("btnYes").disabled = true; $("btnNo").disabled = true;
+    var mark = $("mark");
+    mark.innerHTML = approve ? "承<br>認" : "否<br>認";
+    mark.className = "mark on" + (approve ? "" : " ao");
+    var correct = approve ? !cur.bad : cur.bad;
+
+    setTimeout(function(){
+      if(correct){
+        ok++; pips();
+        if(ok >= GOAL){
+          clearInterval(timer);
+          var ms = Date.now() - t0;
+          $("time").textContent = fmt(ms);
+          $("ctime").textContent = fmt(ms);
+          var note = "やり直し " + fails + " 回 ／ 処理 " + seen + " 件" + (loss ? " ／ 損害 " + yen(loss) + " 円" : "");
+          if(fails === 0) note = "やり直しなし ／ 処理 " + seen + " 件 ／ 損害 0 円";
+          if(best === null || ms < best){
+            best = ms; bestFails = fails;
+            $("csub").textContent = note + "　自己最速を更新";
+          } else {
+            $("csub").textContent = note + "　自己最速 " + fmt(best) + " 秒";
+          }
+          $("best").textContent = "最速 " + fmt(best) + " 秒";
+          $("doc").style.display = "none";
+          $("btns").style.display = "none";
+          $("clear").style.display = "block";
+          $("msg").textContent = ""; $("msg").className = "msg";
+          busy = false; return;
+        }
+        $("msg").textContent = cur.bad ? "そのとおりです。" + cur.reason : "不備はありませんでした。";
+        $("msg").className = "msg ok";
+        $("doc").className = "doc out";
+      } else {
+        ok = 0; fails++; $("fail").textContent = "やり直し " + fails + " 回";
+        if(cur.bad && approve){
+          loss += (cur.loss || 0);
+          $("ledger").innerHTML = "累計損害額<span>" + yen(loss) + " 円</span>";
+          $("ledger").className = "ledger hot";
+        }
+        pips();
+        $("msg").textContent = cur.bad
+          ? "通してしまいました。" + cur.reason
+          : "不備はありませんでした。差し戻す理由がありません。";
+        $("msg").className = "msg err";
+        $("doc").className = "doc bad";
+      }
+      setTimeout(function(){ render(); busy = false; }, 150);
+    }, 360);
+  }
+
+  $("btnYes").addEventListener("click", function(){ judge(true); });
+  $("btnNo").addEventListener("click", function(){ judge(false); });
+  $("again").addEventListener("click", function(){
+    ok = 0; fails = 0; seen = 0; loss = 0; started = false; clearInterval(timer);
+    $("ledger").textContent = "累計損害額　—"; $("ledger").className = "ledger";
+    $("time").textContent = "0.00";
+    $("fail").textContent = "やり直し 0 回";
+    $("clear").style.display = "none";
+    $("doc").style.display = "";
+    $("btns").style.display = "";
+    $("msg").textContent = "1件目です。";
+    $("msg").className = "msg";
+    pips(); render();
+    window.scrollTo({ top:0, behavior:"smooth" });
+  });
+
+  pips(); render();
+  $("fail").textContent = "やり直し 0 回";
+})();
+</script>
+</body>
+</html>

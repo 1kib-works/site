@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>なんでも見積書</title>
+<meta name="description" content="なんでも見積書を発行します。">
+<style>
+:root{
+  --paper:#FCFCF9;
+  --band:#EDF0E9;
+  --rule:#B8C0B4;
+  --rule-strong:#7C8878;
+  --ink:#1C2620;
+  --ink-2:#5A6459;
+  --shu:#C13A26;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--gothic);font-size:16px;line-height:1.8;
+  font-feature-settings:"palt" 1;
+  min-height:100vh;
+}
+.wrap{max-width:600px;margin:0 auto;padding:0 20px 80px}
+
+/* 入口 */
+.intro{padding:44px 0 0}
+.intro h1{
+  font-family:var(--mincho);font-weight:400;
+  font-size:clamp(30px,8vw,42px);letter-spacing:.06em;
+  margin:0;line-height:1.3;
+}
+.intro p{color:var(--ink-2);font-size:14.5px;margin:12px 0 0}
+
+.form{margin:28px 0 0;padding:24px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+label{display:block;font-size:14px;color:var(--ink-2);margin-bottom:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text]{
+  flex:1 1 220px;min-width:0;
+  font-family:var(--gothic);font-size:16px;color:var(--ink);
+  background:transparent;border:1px solid var(--rule-strong);
+  padding:12px 14px;border-radius:0;
+}
+input[type=text]:focus{outline:2px solid var(--shu);outline-offset:2px}
+button{
+  font-family:var(--gothic);font-size:15px;
+  padding:12px 24px;border:1px solid var(--ink);
+  background:transparent;color:var(--ink);cursor:pointer;border-radius:0;
+}
+button:hover{background:var(--ink);color:var(--paper)}
+button:focus-visible{outline:2px solid var(--shu);outline-offset:3px}
+button.primary{background:var(--ink);color:var(--paper)}
+button.primary:hover{background:var(--shu);border-color:var(--shu)}
+button.ghost{border-color:var(--rule-strong);color:var(--ink-2)}
+
+.chips{margin:16px 0 0;display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  font-size:13px;padding:6px 12px;border:1px solid var(--rule);
+  color:var(--ink-2);cursor:pointer;background:transparent;
+}
+.chip:hover{border-color:var(--ink);color:var(--ink);background:transparent}
+
+/* 見積書 */
+#sheet{margin:36px 0 0;display:none}
+.doc{border:1px solid var(--rule-strong);padding:26px 22px;background:var(--paper);position:relative}
+.doc-title{
+  font-family:var(--mincho);font-size:22px;letter-spacing:.5em;
+  text-align:center;margin:0 0 4px;padding-right:.5em;
+}
+.doc-no{text-align:center;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;margin-bottom:22px}
+
+.addressee{font-family:var(--mincho);font-size:17px;border-bottom:1px solid var(--rule-strong);padding-bottom:8px;margin-bottom:18px}
+.addressee .sub{font-family:var(--gothic);font-size:12px;color:var(--ink-2);display:block;margin-top:4px}
+
+.total-box{background:var(--band);padding:16px 18px;margin-bottom:20px;display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.total-box .lbl{font-size:14px}
+.total-box .amt{font-family:var(--mincho);font-variant-numeric:tabular-nums;font-size:clamp(26px,7vw,34px);line-height:1.1}
+.total-box .amt .y{font-size:.5em;margin-left:.15em}
+
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 2px;border-bottom:1px solid var(--rule);text-align:left;font-weight:400;font-size:14.5px;vertical-align:baseline}
+td.num{text-align:right;white-space:nowrap;font-family:var(--mincho);font-size:16px;padding-left:12px}
+tr.extra th,tr.extra td{color:var(--shu)}
+tr.sum th,tr.sum td{border-bottom:none;border-top:2px solid var(--rule-strong);padding-top:12px}
+.note{display:block;font-size:11.5px;color:var(--ink-2);line-height:1.55;margin-top:2px}
+tr.extra .note{color:var(--shu);opacity:.8}
+
+.remarks{margin-top:20px;border:1px solid var(--rule);padding:14px 16px}
+.remarks h3{font-family:var(--mincho);font-weight:400;font-size:14px;margin:0 0 8px;letter-spacing:.08em}
+.remarks ul{margin:0;padding-left:1.1em;font-size:12.5px;color:var(--ink-2);line-height:1.8}
+.remarks li{margin:3px 0}
+
+.stamp{
+  position:absolute;top:18px;right:18px;
+  width:62px;height:62px;border:2px solid var(--shu);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--shu);font-family:var(--mincho);font-size:13px;line-height:1.2;
+  text-align:center;transform:rotate(-11deg);opacity:.82;letter-spacing:.04em;
+}
+
+.actions{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.warn{
+  margin-top:16px;font-size:13.5px;color:var(--shu);
+  border-left:2px solid var(--shu);padding-left:12px;line-height:1.7;
+  display:none;
+}
+.counter{margin-top:14px;font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink-2);line-height:1.8}
+
+@media (max-width:420px){
+  .wrap{padding:0 16px 64px}
+  .doc{padding:22px 16px}
+  .stamp{width:52px;height:52px;font-size:11px;top:14px;right:14px}
+  .doc-title{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="intro">
+    <h1>なんでも見積書</h1>
+    <p>お困りごとを入力してください。適正な価格でお見積りいたします。</p>
+  </div>
+
+  <div class="form">
+    <label for="q">何のお見積りをご希望ですか</label>
+    <div class="row">
+      <input type="text" id="q" placeholder="皿を洗う" maxlength="24" autocomplete="off">
+      <button class="primary" id="go">見積もりを出す</button>
+    </div>
+    <div class="chips">
+      <button class="chip" data-v="皿を洗う">皿を洗う</button>
+      <button class="chip" data-v="布団から出る">布団から出る</button>
+      <button class="chip" data-v="既読をつける">既読をつける</button>
+      <button class="chip" data-v="人の話を聞く">人の話を聞く</button>
+      <button class="chip" data-v="月曜日を迎える">月曜日を迎える</button>
+    </div>
+  </div>
+
+  <div id="sheet">
+    <div class="doc">
+      <div class="stamp">承<br>認</div>
+      <p class="doc-title">御見積書</p>
+      <p class="doc-no" id="docno"></p>
+
+      <div class="addressee" id="addressee"></div>
+
+      <div class="total-box">
+        <span class="lbl">御見積金額（税込）</span>
+        <span class="amt" id="total"></span>
+      </div>
+
+      <table>
+        <tbody id="items"></tbody>
+      </table>
+
+      <div class="remarks">
+        <h3>備考</h3>
+        <ul id="remarks"></ul>
+      </div>
+    </div>
+
+    <p class="warn" id="warn"></p>
+    <p class="counter" id="counter"></p>
+
+    <div class="actions">
+      <button class="primary" id="order">この内容で依頼する</button>
+      <button class="ghost" id="reset">やめておく</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>本見積書に法的効力はありません。金額は架空のものです。実際の請求は行われません。</p>
+    <p>1KB</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var BASE = [
+    ["基本作業費","標準的な作業範囲に限ります"],
+    ["出張費","当日のご都合により変動します"],
+    ["現地調査費","調査の結果は見積に反映されません"],
+    ["技術料","経験に基づく判断に対する費用です"],
+    ["安全管理費","安全は保証されません"],
+    ["養生費","周辺への影響を最小限に留めます"],
+    ["諸経費","内訳の開示は行っておりません"],
+    ["段取り替え費","前工程からの切り替えに要する費用"],
+    ["待機時間費","お待ちいただいている間も発生します"],
+    ["資材運搬費","運搬距離にかかわらず一律です"],
+    ["精神的負荷加算","作業者の心情に配慮した費用です"],
+    ["特殊環境加算","一般的でない状況と判断されました"],
+    ["廃材処分費","処分するものがない場合も発生します"],
+    ["書類作成費","本見積書の作成費用です"]
+  ];
+
+  var EXTRA = [
+    ["追加工事費","現地調査の結果、想定外の状況が判明しました"],
+    ["部材取寄費","規格品の在庫を切らしております"],
+    ["範囲外作業費","標準工事の範囲外であることが判明しました"],
+    ["延長作業費","現場の状況により作業時間が延長しました"],
+    ["隣接部補修費","作業に伴い周辺の補修が必要となりました"],
+    ["再訪問費","一度では完了しないことが判明しました"],
+    ["加工費","既存の規格と合致しないことが判明しました"],
+    ["夜間割増","本日中の対応をご希望とのことでしたので"],
+    ["緊急対応費","お急ぎと判断いたしました"],
+    ["再見積作成費","本見積書の再発行に伴う費用です"]
+  ];
+
+  var REMARKS = [
+    "本見積の有効期限は発行より3分間です。",
+    "現地調査の結果、追加費用が発生する場合があります。",
+    "「標準」の範囲は当社が判断いたします。",
+    "作業日は当社の都合により決定いたします。",
+    "キャンセルの場合もキャンセル料が発生します。",
+    "上記金額には含まれない費用が含まれる場合があります。",
+    "本見積書の内容についてのお問い合わせは受け付けておりません。",
+    "他社との比較はご遠慮ください。",
+    "値段の根拠についてのご説明はいたしかねます。",
+    "ご不明な点は、そのままにしておいてください。"
+  ];
+
+  function hash(s){
+    var h = 2166136261;
+    for(var i=0;i<s.length;i++){
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function rng(seed){
+    var s = seed || 1;
+    return function(){
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17;
+      s ^= s << 5;  s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+  function yen(n){ return n.toLocaleString("ja-JP"); }
+  function pick(arr, r, used){
+    var t = 0;
+    while(t < 60){
+      var i = Math.floor(r() * arr.length);
+      if(used.indexOf(i) === -1){ used.push(i); return arr[i]; }
+      t++;
+    }
+    return arr[0];
+  }
+
+  var subject = "", rand = null, usedBase = [], usedExtra = [];
+  var rows = [], extraCount = 0;
+
+  var $q = document.getElementById("q");
+  var $sheet = document.getElementById("sheet");
+  var $items = document.getElementById("items");
+  var $total = document.getElementById("total");
+  var $addr = document.getElementById("addressee");
+  var $docno = document.getElementById("docno");
+  var $remarks = document.getElementById("remarks");
+  var $warn = document.getElementById("warn");
+  var $counter = document.getElementById("counter");
+
+  function build(){
+    var v = ($q.value || "").trim();
+    if(!v){ v = "皿を洗う"; $q.value = v; }
+    subject = v;
+    var seed = hash(v);
+    rand = rng(seed);
+    usedBase = []; usedExtra = []; rows = []; extraCount = 0;
+
+    var n = 4 + Math.floor(rand() * 4);
+    for(var i=0;i<n;i++){
+      var it = pick(BASE, rand, usedBase);
+      var amt = (2 + Math.floor(rand() * 58)) * 1000;
+      rows.push({ name: it[0], note: it[1], amt: amt, extra: false });
+    }
+
+    $addr.innerHTML = escapeHtml(subject) + " 工事一式<span class=\"sub\">お客様 御中</span>";
+    $docno.textContent = "No. " + String(seed).slice(0,8);
+
+    var rused = [];
+    var rn = 3 + Math.floor(rand() * 2);
+    $remarks.innerHTML = "";
+    for(var k=0;k<rn;k++){
+      var li = document.createElement("li");
+      li.textContent = pick(REMARKS, rand, rused);
+      $remarks.appendChild(li);
+    }
+
+    render();
+    $warn.style.display = "none";
+    $counter.textContent = "";
+    $sheet.style.display = "block";
+    $sheet.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function render(){
+    var sub = 0;
+    var html = "";
+    rows.forEach(function(r){
+      sub += r.amt;
+      html += '<tr class="' + (r.extra ? "extra" : "") + '"><th>' + escapeHtml(r.name) +
+              '<span class="note">' + escapeHtml(r.note) + '</span></th>' +
+              '<td class="num">' + yen(r.amt) + '</td></tr>';
+    });
+    var keihi = Math.round(sub * 0.12 / 100) * 100;
+    var zeinuki = sub + keihi;
+    var tax = Math.floor(zeinuki * 0.1);
+    var total = zeinuki + tax;
+
+    html += '<tr><th>諸経費（12%）<span class="note">上記合計に対して加算されます</span></th><td class="num">' + yen(keihi) + '</td></tr>';
+    html += '<tr><th>消費税<span class="note">法令に基づき申し受けます</span></th><td class="num">' + yen(tax) + '</td></tr>';
+    html += '<tr class="sum"><th>合計</th><td class="num">' + yen(total) + '</td></tr>';
+
+    $items.innerHTML = html;
+    $total.innerHTML = yen(total) + '<span class="y">円</span>';
+  }
+
+  function order(){
+    var it = pick(EXTRA, rand, usedExtra);
+    if(usedExtra.length >= EXTRA.length){ usedExtra = []; }
+    var mult = 1 + extraCount * 0.6;
+    var amt = Math.round((3 + Math.floor(rand() * 40)) * 1000 * mult / 100) * 100;
+    rows.push({ name: it[0], note: it[1], amt: amt, extra: true });
+    extraCount++;
+    render();
+    $warn.textContent = "※ " + it[1] + " お見積りを更新いたしました。";
+    $warn.style.display = "block";
+    $counter.textContent = "追加工事 " + extraCount + " 件";
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c];
+    });
+  }
+
+  document.getElementById("go").addEventListener("click", build);
+  $q.addEventListener("keydown", function(e){ if(e.key === "Enter") build(); });
+  document.getElementById("order").addEventListener("click", order);
+  document.getElementById("reset").addEventListener("click", function(){
+    $sheet.style.display = "none";
+    $q.value = "";
+    $q.focus();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(b){
+    b.addEventListener("click", function(){ $q.value = b.getAttribute("data-v"); build(); });
+  });
+})();
+</script>
+</body>
+</html>
